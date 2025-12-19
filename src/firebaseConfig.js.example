@@ -1,0 +1,13 @@
+// Copia este archivo a `src/firebaseConfig.js` y reemplaza los valores.
+// No subas `src/firebaseConfig.js` al repositorio; está en `.gitignore`.
+
+const firebaseConfig = {
+  apiKey: "<API_KEY>",
+  authDomain: "<PROJECT_ID>.firebaseapp.com",
+  projectId: "<PROJECT_ID>",
+  storageBucket: "<PROJECT_ID>.appspot.com",
+  messagingSenderId: "<SENDER_ID>",
+  appId: "<APP_ID>"
+}
+
+export default firebaseConfig
