@@ -27,13 +27,13 @@ export async function initFirebase() {
     // when firebase is ready, try to flush any queued offline items
     try {
       // processQueue will use remote handlers provided below
-      offlineQueue.processQueue({ remoteSaveUserProfile, remoteSaveRecord })
+      offlineQueue.processQueue({ remoteSaveUserProfile, remoteSaveRecord, remoteUpdateRecord, remoteDeleteRecord })
     } catch (e) {
       // ignore
     }
     // also flush when the browser goes back online
     window.addEventListener('online', () => {
-      offlineQueue.processQueue({ remoteSaveUserProfile, remoteSaveRecord })
+      offlineQueue.processQueue({ remoteSaveUserProfile, remoteSaveRecord, remoteUpdateRecord, remoteDeleteRecord })
     })
     return { app, auth }
   } catch (err) {
@@ -72,7 +72,7 @@ export async function onAuthChanged(callback) {
 }
 
 function emailToId(email) {
-  return encodeURIComponent(email)
+  return email
 }
 
 export async function getUserProfile(email) {
@@ -157,11 +157,56 @@ export async function saveUserRecord(email, record) {
       } else {
         rec.ts = Timestamp.fromDate(new Date())
       }
-    await addDoc(col, rec)
-    offlineQueue.processQueue({ remoteSaveUserProfile, remoteSaveRecord })
+    const docRef = await addDoc(col, rec)
+    offlineQueue.processQueue({ remoteSaveUserProfile, remoteSaveRecord, remoteUpdateRecord, remoteDeleteRecord })
+    return { offline: false, id: docRef.id }
     return { offline: false }
   } catch (e) {
     offlineQueue.enqueue({ action: 'saveRecord', email, record })
+    throw e
+  }
+}
+
+export async function updateUserRecord(email, idRecord, record) {
+  const { app } = await initFirebase()
+  if (!app || !navigator.onLine) {
+    offlineQueue.enqueue({ action: 'updateRecord', email, idRecord, record })
+    return { offline: true }
+  }
+  try {
+    const db = getFirestore(app)
+    const ref = doc(db, 'usuarios', emailToId(email), 'registros', idRecord)
+    const rec = { ...record }
+    if (rec.ts && !(rec.ts instanceof Timestamp)) {
+      let d = rec.ts instanceof Date ? rec.ts : new Date(rec.ts)
+      rec.ts = Timestamp.fromDate(d)
+    }
+    await setDoc(ref, rec, { merge: true })
+    offlineQueue.processQueue({ remoteSaveUserProfile, remoteSaveRecord, remoteUpdateRecord, remoteDeleteRecord })
+    return { offline: false }
+  } catch (e) {
+    offlineQueue.enqueue({ action: 'updateRecord', email, idRecord, record })
+    throw e
+  }
+}
+
+export async function deleteUserRecord(email, idRecord) {
+  const { app } = await initFirebase()
+  if (!app || !navigator.onLine) {
+    offlineQueue.enqueue({ action: 'deleteRecord', email, idRecord })
+    return { offline: true }
+  }
+  try {
+    const db = getFirestore(app)
+    const ref = doc(db, 'usuarios', emailToId(email), 'registros', idRecord)
+    // Use setDoc with { deleted: true } or actually delete - Firestore delete is from 'deleteDoc'
+    // We'll use deleteDoc
+    const { deleteDoc } = await import('firebase/firestore')
+    await deleteDoc(ref)
+    offlineQueue.processQueue({ remoteSaveUserProfile, remoteSaveRecord, remoteUpdateRecord, remoteDeleteRecord })
+    return { offline: false }
+  } catch (e) {
+    offlineQueue.enqueue({ action: 'deleteRecord', email, idRecord })
     throw e
   }
 }
@@ -194,5 +239,29 @@ export async function remoteSaveRecord(email, record) {
     rec.ts = Timestamp.fromDate(new Date())
   }
   await addDoc(col, rec)
+  return true
+}
+
+export async function remoteUpdateRecord(email, idRecord, record) {
+  const { app } = await initFirebase()
+  if (!app) throw new Error('Firebase no inicializado')
+  const db = getFirestore(app)
+  const ref = doc(db, 'usuarios', emailToId(email), 'registros', idRecord)
+  const rec = { ...record }
+  if (rec.ts && !(rec.ts instanceof Timestamp)) {
+    let d = rec.ts instanceof Date ? rec.ts : new Date(rec.ts)
+    rec.ts = Timestamp.fromDate(d)
+  }
+  await setDoc(ref, rec, { merge: true })
+  return true
+}
+
+export async function remoteDeleteRecord(email, idRecord) {
+  const { app } = await initFirebase()
+  if (!app) throw new Error('Firebase no inicializado')
+  const db = getFirestore(app)
+  const ref = doc(db, 'usuarios', emailToId(email), 'registros', idRecord)
+  const { deleteDoc } = await import('firebase/firestore')
+  await deleteDoc(ref)
   return true
 }

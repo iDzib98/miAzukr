@@ -70,6 +70,20 @@ export async function processQueue(remoteHandlers = {}) {
           } else {
             console.warn('offlineQueue: no remote handler for saveRecord, skipping', item)
           }
+        } else if (item.action === 'updateRecord') {
+          if (remoteHandlers.remoteUpdateRecord) {
+            await remoteHandlers.remoteUpdateRecord(item.email, item.idRecord, item.record)
+            removeById(item.id)
+          } else {
+            console.warn('offlineQueue: no remote handler for updateRecord, skipping', item)
+          }
+        } else if (item.action === 'deleteRecord') {
+          if (remoteHandlers.remoteDeleteRecord) {
+            await remoteHandlers.remoteDeleteRecord(item.email, item.idRecord)
+            removeById(item.id)
+          } else {
+            console.warn('offlineQueue: no remote handler for deleteRecord, skipping', item)
+          }
         } else {
           console.warn('offlineQueue: unknown action', item.action)
           removeById(item.id)

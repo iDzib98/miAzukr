@@ -16,13 +16,13 @@ import {
   Stack
 } from '@mui/material'
 
-const glucoseMoments = ['Ayuno','Antes de comer','Después de comer','Antes de dormir']
+const glucoseMoments = ['En ayuno','Antes de comer','Después de comer','Antes de dormir']
 const glucoseSymptoms = ['Mareo','Cansancio','Visión borrosa']
 const mealTypes = ['Desayuno','Almuerzo','Cena','Snack','Colación']
 const activityTypes = ['Caminar','Correr','Gimnasio','Yoga']
 const intensityLevels = ['Ligera','Moderada','Intensa']
 
-export default function RecordForm({ open, onClose, onSave, userProfile }) {
+export default function RecordForm({ open, onClose, onSave, userProfile, initialRecord = null }) {
   function toLocalInputValue(d) {
     const y = d.getFullYear()
     const mo = String(d.getMonth() + 1).padStart(2, '0')
@@ -59,23 +59,44 @@ export default function RecordForm({ open, onClose, onSave, userProfile }) {
 
   useEffect(() => {
     if (open) {
-      setType('Glucosa')
-      setDatetime(nowLocal)
-      setNotes('')
-      setGlucoseLevel('')
-      setGlucoseUnit((userProfile && userProfile.unidadGlucosa) || 'mg/dL')
-      setGlucoseMoment(glucoseMoments[0])
-      setGlucoseSymptomsSel([])
-      setMealType(mealTypes[0])
-      setMealDesc('')
-      setMealCarbs('')
-      setActivityType(activityTypes[0])
-      setActivityDuration('')
-      setActivityIntensity(intensityLevels[0])
-      setMedType(meds.length ? meds[0] : '')
-      setMedDose('')
+      if (initialRecord) {
+        // populate fields from initialRecord
+        const rec = initialRecord
+        const ts = rec.ts && rec.ts.toDate ? rec.ts.toDate() : (rec.ts instanceof Date ? rec.ts : new Date(rec.ts))
+        setType(rec.type || 'Glucosa')
+        setDatetime(toLocalInputValue(ts || new Date()))
+        setNotes(rec.notes || '')
+        setGlucoseLevel(rec.data?.level ?? '')
+        setGlucoseUnit(rec.data?.unit || ((userProfile && userProfile.unidadGlucosa) || 'mg/dL'))
+        setGlucoseMoment(rec.data?.moment || glucoseMoments[0])
+        setGlucoseSymptomsSel(rec.data?.symptoms ? (String(rec.data.symptoms).split(',').map(s => s.trim()).filter(Boolean)) : [])
+        setMealType(rec.data?.mealType || mealTypes[0])
+        setMealDesc(rec.data?.description || '')
+        setMealCarbs(rec.data?.carbs ?? '')
+        setActivityType(rec.data?.activityType || activityTypes[0])
+        setActivityDuration(rec.data?.durationMin ?? '')
+        setActivityIntensity(rec.data?.intensity || intensityLevels[0])
+        setMedType(rec.data?.medType || (meds.length ? meds[0] : ''))
+        setMedDose(rec.data?.dose ?? '')
+      } else {
+        setType('Glucosa')
+        setDatetime(nowLocal)
+        setNotes('')
+        setGlucoseLevel('')
+        setGlucoseUnit((userProfile && userProfile.unidadGlucosa) || 'mg/dL')
+        setGlucoseMoment(glucoseMoments[0])
+        setGlucoseSymptomsSel([])
+        setMealType(mealTypes[0])
+        setMealDesc('')
+        setMealCarbs('')
+        setActivityType(activityTypes[0])
+        setActivityDuration('')
+        setActivityIntensity(intensityLevels[0])
+        setMedType(meds.length ? meds[0] : '')
+        setMedDose('')
+      }
     }
-  }, [open])
+  }, [open, initialRecord])
 
   function handleSave() {
     // parse datetime-local value as local time (avoid Date(..) ambiguous parsing)
@@ -94,6 +115,8 @@ export default function RecordForm({ open, onClose, onSave, userProfile }) {
     }
     const base = { ts: tsDate, type, notes }
     let payload = { ...base }
+    // include id when editing
+    if (initialRecord && initialRecord.id) payload.id = initialRecord.id
     if (type === 'Glucosa') {
       payload.data = {
         level: glucoseLevel === '' ? null : Number(glucoseLevel),
@@ -113,7 +136,7 @@ export default function RecordForm({ open, onClose, onSave, userProfile }) {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Añadir registro</DialogTitle>
+      <DialogTitle>{initialRecord ? 'Editar registro' : 'Añadir registro'}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
           <TextField label="Fecha y hora" type="datetime-local" value={datetime} onChange={e => setDatetime(e.target.value)} />
