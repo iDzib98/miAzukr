@@ -38,3 +38,20 @@ node_modules
 
 # Local Firebase client config (do not commit)
 /src/firebaseConfig.js
+
+# Local build files
+/dist
+
+# MacOS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+# Other
+coverage/
+.cache/
+.pnp.*
+.pnp.js
+*.tgz

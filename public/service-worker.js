@@ -2,7 +2,6 @@ const CACHE_NAME = 'miAzukr-cache-v1'
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/src/main.jsx',
   '/manifest.json',
   '/icons/icon-192.svg',
   '/icons/icon-512.svg'
