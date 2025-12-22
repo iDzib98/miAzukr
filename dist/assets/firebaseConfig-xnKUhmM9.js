@@ -1,1 +1,0 @@
-const a={apiKey:"AIzaSyD-iVvMwJLeKEL1DcruW9lEs5co0jOJQwI",authDomain:"miazukr.firebaseapp.com",projectId:"miazukr",storageBucket:"miazukr.firebasestorage.app",messagingSenderId:"1022161448684",appId:"1:1022161448684:web:3d914d8077f298f3337fc9"};export{a as default};
