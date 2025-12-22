@@ -5,12 +5,13 @@ import RefreshIcon from '@mui/icons-material/Refresh'
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined'
 import { AuthContext } from '../App'
 import { getUserProfile, getUserRecords, saveUserRecord, updateUserRecord, deleteUserRecord } from '../firebaseClient'
+import defaultProfile from '../defaultProfile'
 import RecordForm from '../components/RecordForm'
 import Registro from '../components/Registro'
 
 function formatDateInput(d) {
-  const dt = new Date(d)
-  return dt.toISOString().slice(0,10)
+  const dt = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+  return dt
 }
 
 export default function Registros() {
@@ -41,6 +42,7 @@ export default function Registros() {
     try {
       setLoading(true)
       // ensure start includes start of local day and end includes end of local day
+      console.log('Fetching records for', user.email, 'from', start, 'to', end)
       const from = start ? (() => { const [y, m, d] = start.split('-').map(Number); return new Date(y, m - 1, d, 0, 0, 0, 0) })() : null
       const to = end ? (() => { const [y, m, d] = end.split('-').map(Number); return new Date(y, m - 1, d, 23, 59, 59, 999) })() : null
       const res = await getUserRecords(user.email, from, to)
@@ -113,7 +115,7 @@ export default function Registros() {
   }
 
   return (
-    <Paper sx={{ m: 0, borderRadius: 0, minHeight: 'calc(100vh - var(--top-offset) - var(--bottom-offset))' }}>
+    <Paper elevation={0} sx={{ m: 0, borderRadius: 0, minHeight: 'calc(100vh - var(--top-offset) - var(--bottom-offset))' }}>
       <Box sx={{ p: 3 }}>
         <Typography variant="h5">Registros</Typography>
 
@@ -131,9 +133,14 @@ export default function Registros() {
 
         {loading ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Skeleton variant="rectangular" height={80} />
-            <Skeleton variant="rectangular" height={80} />
-            <Skeleton variant="rectangular" height={80} />
+            <Skeleton variant="rounded" height={80} />
+            <Skeleton variant="rounded" height={80} />
+            <Skeleton variant="rounded" height={80} />
+            <Skeleton variant="rounded" height={80} />
+            <Skeleton variant="rounded" height={80} />
+            <Skeleton variant="rounded" height={80} />
+            <Skeleton variant="rounded" height={80} />
+            <Skeleton variant="rounded" height={80} />
           </Box>
         ) : (
           records.length === 0 ? (
@@ -145,7 +152,7 @@ export default function Registros() {
           ) : (
             records.map(r => (
               <Box key={r.id}>
-                <Registro record={r} onEdit={handleEditRecord} onDelete={handleDeleteRecord} />
+                <Registro record={r} userProfile={{ ...defaultProfile, ...(profile || {}) }} onEdit={handleEditRecord} onDelete={handleDeleteRecord} />
               </Box>
             ))
           )

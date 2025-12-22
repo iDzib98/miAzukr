@@ -34,6 +34,16 @@ export function ThemeProvider({ children, initialPreference }) {
       createTheme({
         palette: {
           mode
+        },
+        // Make BottomNavigation slightly lighter in dark mode
+        components: {
+          MuiBottomNavigation: {
+            styleOverrides: {
+              root: {
+                backgroundImage: mode === 'dark' ? 'linear-gradient(rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.09));' : undefined
+              }
+            }
+          }
         }
       }),
     [mode]

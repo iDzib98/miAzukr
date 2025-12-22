@@ -478,7 +478,7 @@ export default function Configuracion() {
   const [tab, setTab] = useState(0)
 
   return (
-    <Paper sx={{ m: 0, borderRadius: 0, minHeight: 'calc(100vh - var(--top-offset) - var(--bottom-offset))' }}>
+    <Paper elevation={0} sx={{ m: 0, borderRadius: 0, minHeight: 'calc(100vh - var(--top-offset) - var(--bottom-offset))' }}>
       <Tabs value={tab} variant="fullWidth" onChange={(e, v) => setTab(v) }>
         <Tab label="Cuenta" />
         <Tab label="Ajustes" />

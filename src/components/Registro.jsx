@@ -21,7 +21,7 @@ function formatTs(ts) {
   })
 }
 
-export default function Registro({ record, compact = false, onEdit, onDelete }) {
+export default function Registro({ record, compact = false, onEdit, onDelete, userProfile }) {
   const r = record || {}
   const { type, ts, data, notes } = r
   const subtitle = formatTs(ts)
@@ -94,7 +94,9 @@ export default function Registro({ record, compact = false, onEdit, onDelete }) 
   }
 
   function getMeasurement() {
-    if (type === 'Glucosa') return data?.level ?? '—'
+    if (type === 'Glucosa') {
+      return data?.level ?? '—'
+    }
     if (type === 'Alimentación') return data?.carbs ?? '—'
     if (type === 'Actividad') return data?.durationMin ?? '—'
     if (type === 'Medicación' || type === 'MedicaciÃ³n') return data?.dose ?? '—'
@@ -103,7 +105,7 @@ export default function Registro({ record, compact = false, onEdit, onDelete }) 
 
   function getUnit() {
     if (type === 'Glucosa') return data?.unit || ''
-    if (type === 'Alimentación') return 'cal'
+    if (type === 'Alimentación') return 'g de carb'
     if (type === 'Actividad') return 'min'
     if (type === 'Medicación' || type === 'MedicaciÃ³n') return 'dosis'
     return ''
@@ -117,9 +119,67 @@ export default function Registro({ record, compact = false, onEdit, onDelete }) 
     return type || ''
   }
 
+  // Conversion & display helpers for glucose
+  const preferredUnit = (userProfile && userProfile.unidadGlucosa) || 'mg/dL'
+  function mgdlToMmoll(v) {
+    return Number((v / 18).toFixed(1))
+  }
+  function mmollToMgdl(v) {
+    return Math.round(v * 18)
+  }
+
   const measurement = getMeasurement()
   const unit = getUnit()
   const mainTitle = getMainTitle()
+
+  // Prepare display values (possibly converted) and color coding
+  let displayMeasurement = measurement
+  let displayUnit = unit
+  let colorKey = 'text.primary'
+
+  if (type === 'Glucosa') {
+    const storedUnit = (data && data.unit) || preferredUnit
+    const raw = (data && (data.level !== undefined ? data.level : null))
+    if (raw === null || raw === undefined || raw === '' || raw === '—') {
+      displayMeasurement = '—'
+      displayUnit = preferredUnit
+    } else {
+      const num = Number(raw)
+      if (isNaN(num)) {
+        displayMeasurement = raw
+        displayUnit = preferredUnit
+      } else {
+        let valInPreferred
+        if (storedUnit === preferredUnit) valInPreferred = num
+        else if (storedUnit === 'mg/dL' && preferredUnit === 'mmol/L') valInPreferred = mgdlToMmoll(num)
+        else if (storedUnit === 'mmol/L' && preferredUnit === 'mg/dL') valInPreferred = mmollToMgdl(num)
+        else valInPreferred = num
+
+        // format for display
+        if (preferredUnit === 'mmol/L') displayMeasurement = Number(valInPreferred).toFixed(1)
+        else displayMeasurement = String(Math.round(valInPreferred))
+        displayUnit = preferredUnit
+
+        // thresholds come from userProfile and are expected in preferred unit
+        const p = userProfile || {}
+        const min = Number(p.intervaloIdealMin)
+        const max = Number(p.intervaloIdealMax)
+        const muyAlto = Number(p.muyAlto)
+        const muyBajo = Number(p.muyBajo)
+        const valNum = Number(valInPreferred)
+
+        if (!isNaN(valNum)) {
+          if ((!isNaN(muyAlto) && valNum >= muyAlto) || (!isNaN(muyBajo) && valNum <= muyBajo)) {
+            colorKey = 'error.main'
+          } else if (!isNaN(min) && !isNaN(max) && valNum >= min && valNum <= max) {
+            colorKey = 'success.main'
+          } else {
+            colorKey = 'warning.main'
+          }
+        }
+      }
+    }
+  }
 
   return (
     <Accordion sx={{ my: 1 } } elevation={3}>
@@ -136,9 +196,9 @@ export default function Registro({ record, compact = false, onEdit, onDelete }) 
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box sx={{ textAlign: 'right', mr: 1 }}>
-              <Typography variant="h6">{measurement}</Typography>
-              <Typography variant="caption">{unit}</Typography>
+            <Box sx={{ textAlign: 'right' }}>
+              <Typography variant="h6" sx={{ color: colorKey }}>{displayMeasurement}</Typography>
+              <Typography variant="caption">{displayUnit}</Typography>
             </Box>
             <Box>
               <IconButton
