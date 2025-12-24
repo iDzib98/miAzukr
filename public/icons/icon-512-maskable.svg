@@ -5,7 +5,7 @@
    aria-labelledby="title"
    version="1.1"
    id="svg3"
-   sodipodi:docname="icon-512.svg"
+   sodipodi:docname="icon-512-maskable.svg"
    inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -56,7 +56,6 @@
   <rect
      width="512"
      height="512"
-     rx="64"
      fill="url(#g1)"
      id="rect2"
      x="0"

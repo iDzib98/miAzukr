@@ -9,28 +9,25 @@
   </defs>
 
   <!-- Background rounded square with gradient -->
-  <rect width="512" height="512" rx="64" fill="url(#g1)"/>
+  <rect width="512" height="512" rx="64" fill="url(#g1)" id="rect2" x="0" y="0"/>
 
-  <!-- Soft halo for depth -->
-  <circle cx="256" cy="200" r="160" fill="#ffffff" opacity="0.06"/>
+    <g transform="translate(-24,32)">
+      <!-- Soft halo for depth -->
+      <circle cx="256" cy="200" r="160" fill="#ffffff" opacity="0.06"/>
 
-  <!-- Droplet shape (blood drop) -->
-  <path d="M256 112c-34 60-76 95-76 150 0 74 60 134 136 134s136-60 136-134c0-55-42-90-76-150-28-48-60-66-120-34-12 6-24 18-36 34z"
+      <!-- Droplet shape (blood drop) -->
+      <path d="M256 112c-34 60-76 95-76 150 0 74 60 134 136 134s136-60 136-134c0-55-42-90-76-150-28-48-60-66-120-34-12 6-24 18-36 34z"
         fill="#fff" opacity="0.98"/>
 
-  <!-- Inner core circle to suggest focus/measurement -->
-  <circle cx="256" cy="260" r="44" fill="#FF6B6B"/>
+      <!-- Inner core circle to suggest focus/measurement -->
+      <circle cx="256" cy="260" r="44" fill="#FF6B6B"/>
 
-  <!-- Heartbeat / glucose line inside droplet -->
-  <path d="M192 256 L220 240 L240 276 L268 220 L300 268 L332 248"
+      <!-- Heartbeat / glucose line inside droplet -->
+      <path d="M192 256 L220 240 L240 276 L268 220 L300 268 L332 248"
         fill="none" stroke="#6A0DAD" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
 
-  <!-- Small check mark to suggest tracking/record -->
-  <polyline points="210,322 240,352 302,290" fill="none" stroke="#1B998B" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>
-
-  <!-- App initials subtle (miAzukr) -->
-  <g transform="translate(0,16)">
-    <text x="256" y="456" font-family="Segoe UI, Roboto, Arial, sans-serif" font-size="36" fill="#ffffff" text-anchor="middle" font-weight="700">miAzukr</text>
-  </g>
+      <!-- Small check mark to suggest tracking/record -->
+      <polyline points="210,322 240,352 302,290" fill="none" stroke="#1B998B" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>
+    </g>
 
 </svg>
