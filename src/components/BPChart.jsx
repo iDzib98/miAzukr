@@ -14,9 +14,13 @@ function formatTsToMs(ts) {
     return isNaN(d.getTime()) ? null : d.getTime()
 }
 
-export default function BPChart() {
+export default function BPChart({ defaultRange }) {
     const { user } = useContext(AuthContext)
-    const [range, setRange] = useState('week')
+    const [range, setRange] = useState(() => defaultRange || 'week')
+    // Sync with prop updates (only when defaultRange prop changes)
+    useEffect(() => {
+        if (defaultRange) setRange(defaultRange)
+    }, [defaultRange])
     const [loading, setLoading] = useState(false)
     const [profile, setProfile] = useState(null)
     const [series, setSeries] = useState({ systolic: [], diastolic: [] })

@@ -41,6 +41,13 @@ import ScienceIcon from '@mui/icons-material/Science'
   import SaveIcon from '@mui/icons-material/Save'
   import CloseIcon from '@mui/icons-material/Close'
   import LogoutIcon from '@mui/icons-material/Logout'
+  import Switch from '@mui/material/Switch'
+  import List from '@mui/material/List'
+  import ListItem from '@mui/material/ListItem'
+  import ListItemText from '@mui/material/ListItemText'
+  import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
+  import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
+  import SaveAltIcon from '@mui/icons-material/SaveAlt'
 function AccountTab() {
   const { user, setUser } = useContext(AuthContext)
   const [profile, setProfile] = useState(null)
@@ -454,22 +461,180 @@ function AjustesTab() {
   const { preference, setPreference } = useThemePreference()
   const [value, setValue] = useState(preference || 'system')
 
+  // dashboard settings
+  const { user } = useContext(AuthContext)
+  const [dashboardConfig, setDashboardConfig] = useState(null)
+  const [originalDashboard, setOriginalDashboard] = useState(null)
+  const [loadingDash, setLoadingDash] = useState(false)
+  const [snack, setSnack] = useState({ open: false, message: '' })
+
+  // default items/order
+  const defaultOrder = ['Glucosa', 'Presión arterial', 'Alimentación', 'Actividad', 'Medicación']
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      if (!user?.email) return
+      setLoadingDash(true)
+      try {
+        const getProf = await import('../firebaseClient.js').then(mod => mod.getUserProfile)
+        const p = await getProf(user.email)
+        const merged = { ...defaultProfile, ...(p || {}) }
+        const d = (merged.dashboard) || {}
+        const order = Array.isArray(d.order) && d.order.length ? d.order : defaultOrder
+        const visible = (d.visible) || {}
+        // ensure all items exist in visible
+        const vis = {}
+        defaultOrder.forEach(k => { vis[k] = visible[k] !== undefined ? Boolean(visible[k]) : true })
+        const defaultRange = d.defaultRange || 'week'
+        if (mounted) {
+          setDashboardConfig({ order, visible: vis, defaultRange })
+          setOriginalDashboard({ order, visible: vis, defaultRange })
+        }
+      } catch (e) {
+        console.error('Error loading dashboard config', e)
+      } finally {
+        if (mounted) setLoadingDash(false)
+      }
+    })()
+    return () => { mounted = false }
+  }, [user])
+
   function handleChange(e) {
     const v = e.target.value
     setValue(v)
     setPreference(v)
   }
 
+  function showSnack(message) { setSnack({ open: true, message }) }
+
+  function toggleVisible(key) {
+    setDashboardConfig(prev => ({ ...(prev || {}), visible: { ...(prev.visible || {}), [key]: !(prev.visible && prev.visible[key]) } }))
+  }
+
+  function move(key, dir) {
+    setDashboardConfig(prev => {
+      if (!prev) return prev
+      const arr = [...(prev.order || [])]
+      const idx = arr.indexOf(key)
+      if (idx === -1) return prev
+      const to = dir === 'up' ? idx - 1 : idx + 1
+      if (to < 0 || to >= arr.length) return prev
+      const tmp = arr[to]
+      arr[to] = arr[idx]
+      arr[idx] = tmp
+      return { ...prev, order: arr }
+    })
+  }
+
+  async function handleSaveDashboard() {
+    if (!user?.email || !dashboardConfig) return
+    try {
+      const save = await import('../firebaseClient.js').then(mod => mod.saveUserProfile)
+      const res = await save(user.email, { dashboard: dashboardConfig })
+      // mark saved as original so FAB dirty state clears
+      setOriginalDashboard(dashboardConfig)
+      if (res && res.offline) showSnack('Ajustes guardados localmente — se sincronizarán cuando haya conexión')
+      else showSnack('Ajustes guardados')
+    } catch (e) {
+      console.error('Error saving dashboard settings', e)
+      showSnack('Error guardando ajustes: ' + e.message)
+    }
+  }
+
   return (
     <Box sx={{ p: 3 }}>
 
       <Typography variant="subtitle1">Tema</Typography>
-      <RadioGroup value={value} onChange={handleChange}>
+      <RadioGroup value={value} onChange={handleChange} row>
         <FormControlLabel value="system" control={<Radio />} label="Sistema" />
         <FormControlLabel value="light" control={<Radio />} label="Claro" />
         <FormControlLabel value="dark" control={<Radio />} label="Oscuro" />
       </RadioGroup>
       <Divider sx={{ my: 2 }} />
+
+      <Typography variant="subtitle1">Dashboard</Typography>
+      <Typography variant="body2" sx={{ mb: 1 }}>Selecciona las gráficas a mostrar, el periodo por defecto y el orden.</Typography>
+
+      {!dashboardConfig ? (
+        <Typography>Cargando ajustes...</Typography>
+      ) : (
+        <>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body2">Periodo por defecto</Typography>
+            <RadioGroup value={dashboardConfig.defaultRange} onChange={(e) => setDashboardConfig(prev => ({ ...(prev||{}), defaultRange: e.target.value }))} row>
+              <FormControlLabel value="day" control={<Radio />} label="Día" />
+              <FormControlLabel value="week" control={<Radio />} label="Semana" />
+              <FormControlLabel value="month" control={<Radio />} label="Mes" />
+            </RadioGroup>
+          </Box>
+
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body2">Gráficas (activar / desactivar)</Typography>
+            <List>
+              {dashboardConfig.order.map((k, i) => (
+                <ListItem key={k} secondaryAction={(
+                  <Box>
+                    <IconButton size="small" onClick={() => move(k, 'up')} disabled={i === 0}><ArrowUpwardIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" onClick={() => move(k, 'down')} disabled={i === dashboardConfig.order.length - 1}><ArrowDownwardIcon fontSize="small" /></IconButton>
+                  </Box>
+                )}>
+                  <Switch checked={!!dashboardConfig.visible[k]} onChange={() => toggleVisible(k)} />
+                  <ListItemText primary={k} />
+                </ListItem>
+              ))}
+            </List>
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button onClick={() => { setDashboardConfig({ order: defaultOrder, visible: defaultOrder.reduce((a,c)=>({ ...a, [c]: true }),{}), defaultRange: 'week' }) }}>Restablecer por defecto</Button>
+          </Box>
+
+          {(() => {
+            const orig = originalDashboard || {}
+            const dirtyDash = JSON.stringify(dashboardConfig || {}) !== JSON.stringify(orig || {})
+            if (!dirtyDash) return null
+            return (
+              <>
+                <Zoom in={dirtyDash}>
+                  <Tooltip title="Descartar cambios" placement="left">
+                    <Fab
+                      color="default"
+                      size="small"
+                      aria-label="descartar-dashboard"
+                      sx={{ position: 'fixed', right: 16, bottom: 'calc(var(--bottom-offset) + 96px)' }}
+                      onClick={() => { if (originalDashboard) setDashboardConfig(originalDashboard); else setDashboardConfig({ order: defaultOrder, visible: defaultOrder.reduce((a,c)=>({ ...a, [c]: true }),{}), defaultRange: 'week' }) }}
+                    >
+                      <UndoIcon />
+                    </Fab>
+                  </Tooltip>
+                </Zoom>
+
+                <Zoom in={dirtyDash}>
+                  <Fab
+                    variant="extended"
+                    color="primary"
+                    aria-label="guardar-dashboard"
+                    sx={{ position: 'fixed', right: 16, bottom: 'calc(var(--bottom-offset) + 16px)' }}
+                    onClick={handleSaveDashboard}
+                  >
+                    <SaveIcon sx={{ mr: 1 }} /> Guardar ajustes
+                  </Fab>
+                </Zoom>
+              </>
+            )
+          })()}
+        </>
+      )}
+
+      <Divider sx={{ my: 2 }} />
+
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={4000}
+        onClose={() => setSnack({ ...snack, open: false })}
+        message={snack.message}
+      />
     </Box>
   )
 }

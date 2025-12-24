@@ -14,9 +14,13 @@ function formatTsToMs(ts) {
     return isNaN(d.getTime()) ? null : d.getTime()
 }
 
-export default function GlucoseScatter() {
+export default function GlucoseScatter({ defaultRange }) {
     const { user } = useContext(AuthContext)
-    const [range, setRange] = useState('week') // 'day'|'week'|'month'
+    const [range, setRange] = useState(() => defaultRange || 'week') // 'day'|'week'|'month'
+    // Keep range in sync when parent updates defaultRange (only when prop changes)
+    useEffect(() => {
+        if (defaultRange) setRange(defaultRange)
+    }, [defaultRange])
     const [loading, setLoading] = useState(false)
     const [profile, setProfile] = useState(null)
     const [points, setPoints] = useState({ green: [], yellow: [], red: [] })

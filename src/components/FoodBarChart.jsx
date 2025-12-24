@@ -22,9 +22,13 @@ function formatKeyToLabel(key) {
     return `${d}/${m}/${y}`
 }
 
-export default function FoodBarChart() {
+export default function FoodBarChart({ defaultRange }) {
     const { user } = useContext(AuthContext)
-    const [range, setRange] = useState('week')
+    const [range, setRange] = useState(() => defaultRange || 'week')
+    // Sync with prop updates (only when defaultRange prop changes)
+    useEffect(() => {
+        if (defaultRange) setRange(defaultRange)
+    }, [defaultRange])
     const [loading, setLoading] = useState(false)
     const [seriesData, setSeriesData] = useState(null)
 

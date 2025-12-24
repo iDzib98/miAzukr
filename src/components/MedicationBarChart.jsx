@@ -20,9 +20,13 @@ function formatKeyToLabel(key) {
     return `${d}/${m}/${y}`
 }
 
-export default function MedicationBarChart() {
+export default function MedicationBarChart({ defaultRange }) {
     const { user } = useContext(AuthContext)
-    const [range, setRange] = useState('week')
+    const [range, setRange] = useState(() => defaultRange || 'week')
+    // Sync with prop updates (only when defaultRange prop changes)
+    useEffect(() => {
+        if (defaultRange) setRange(defaultRange)
+    }, [defaultRange])
     const [loading, setLoading] = useState(false)
     const [seriesData, setSeriesData] = useState(null)
 
