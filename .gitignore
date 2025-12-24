@@ -57,3 +57,5 @@ coverage/
 *.tgz
 
 node_modules.rar
+/node_modules.rar
+*.rar
