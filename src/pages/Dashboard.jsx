@@ -4,6 +4,8 @@ import GlucoseScatter from '../components/GlucoseScatter'
 import BPChart from '../components/BPChart'
 import ErrorBoundary from '../components/ErrorBoundary'
 import FoodBarChart from '../components/FoodBarChart'
+import ActivityBarChart from '../components/ActivityBarChart'
+import MedicationBarChart from '../components/MedicationBarChart'
 
 export default function Dashboard() {
   return (
@@ -18,6 +20,10 @@ export default function Dashboard() {
           <BPChart />
 
           <FoodBarChart />
+
+          <ActivityBarChart />
+
+          <MedicationBarChart />
 
         </Box>
       </Paper>
