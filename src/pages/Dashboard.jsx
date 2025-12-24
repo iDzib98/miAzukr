@@ -1,5 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react'
-import { Box, Typography, Paper } from '@mui/material'
+import { useNavigate } from 'react-router-dom'
+import { Box, Typography, Paper, Fab } from '@mui/material'
+import AddIcon from '@mui/icons-material/Add'
 import GlucoseScatter from '../components/GlucoseScatter'
 import BPChart from '../components/BPChart'
 import ErrorBoundary from '../components/ErrorBoundary'
@@ -10,6 +12,7 @@ import { AuthContext } from '../App'
 
 export default function Dashboard() {
   const { user } = useContext(AuthContext)
+  const navigate = useNavigate()
   const [dashboardConfig, setDashboardConfig] = useState({
     order: ['Glucosa', 'Presión arterial', 'Alimentación', 'Actividad', 'Medicación'],
     visible: { 'Glucosa': true, 'Presión arterial': true, 'Alimentación': true, 'Actividad': true, 'Medicación': true },
@@ -64,6 +67,10 @@ export default function Dashboard() {
               <Box key={k} sx={{ mb: 2 }}>{componentFor(k)}</Box>
             ) : null
           ))}
+
+          <Fab variant="extended" color="primary" sx={{ position: 'fixed', right: 16, bottom: 'calc(var(--bottom-offset) + 16px)' }} onClick={() => navigate('/registros', { state: { openForm: true } })}>
+            <AddIcon sx={{ mr: 1 }} /> Añadir registro
+          </Fab>
 
         </Box>
       </Paper>

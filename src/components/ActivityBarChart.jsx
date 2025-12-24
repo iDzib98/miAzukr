@@ -29,6 +29,7 @@ export default function ActivityBarChart({ defaultRange }) {
     }, [defaultRange])
     const [loading, setLoading] = useState(false)
     const [seriesData, setSeriesData] = useState(null)
+    const [hasRecs, setHasRecs] = useState(false)
 
     // default activity types (kept in sync with RecordForm)
     const activityTypes = ['Caminar', 'Correr', 'Gimnasio', 'Yoga']
@@ -38,6 +39,7 @@ export default function ActivityBarChart({ defaultRange }) {
         ;(async () => {
             if (!user?.email) return
             setLoading(true)
+            setHasRecs(false)
             try {
                 const now = new Date()
                 let from = new Date()
@@ -56,6 +58,9 @@ export default function ActivityBarChart({ defaultRange }) {
                 }
 
                 const recs = await getUserRecords(user.email, startDay, new Date(endDay.getTime() + 24 * 60 * 60 * 1000 - 1))
+
+                // Only consider records of type 'Actividad' as valid for this chart
+                setHasRecs(Array.isArray(recs) && recs.some(r => r.type === 'Actividad'))
 
                 const seriesMap = {}
                 activityTypes.forEach(mt => { seriesMap[mt] = new Array(dayKeys.length).fill(0) })
@@ -96,8 +101,8 @@ export default function ActivityBarChart({ defaultRange }) {
     return (
         <Card elevation={3} sx={{ mb: 2 }}>
             <CardHeader
-                title="Actividad física (min por día)"
-                subheader={`Último ${range}`}
+                title="Actividad física"
+                subheader={`Min por día`}
                 action={(
                     <ToggleButtonGroup size="small" value={range} exclusive onChange={handleRangeChange} aria-label="Rango">
                         <ToggleButton value="day">Día</ToggleButton>
@@ -110,7 +115,7 @@ export default function ActivityBarChart({ defaultRange }) {
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress /></Box>
                 ) : (
-                    !seriesData || seriesData.xAxis.length === 0 ? (
+                    !hasRecs ? (
                         <Box sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
                             <Typography>No se encontraron registros de actividad en este intervalo.</Typography>
                         </Box>

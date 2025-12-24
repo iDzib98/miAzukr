@@ -1,4 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Box, Typography, Paper, TextField, Button, Fab, Divider, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Tooltip, Skeleton } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import RefreshIcon from '@mui/icons-material/Refresh'
@@ -16,6 +17,8 @@ function formatDateInput(d) {
 
 export default function Registros() {
   const { user } = useContext(AuthContext)
+  const location = useLocation()
+  const navigate = useNavigate()
   const [profile, setProfile] = useState(null)
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(false)
@@ -67,18 +70,29 @@ export default function Registros() {
         setEditingRecord(null)
         setFormOpen(false)
         fetchRecords()
+        navigate('/registros', { replace: true })
       } else {
         const res = await saveUserRecord(user.email, rec)
         if (res && res.offline) setSnack({ open:true, message: 'Registro guardado localmente; se sincronizará más tarde' })
         else setSnack({ open:true, message: 'Registro guardado' })
         setFormOpen(false)
         fetchRecords()
+        navigate('/registros', { replace: true })
       }
     } catch (e) {
       console.error('Error saving record', e)
       setSnack({ open:true, message: 'Error guardando registro: ' + e.message })
     }
   }
+
+  useEffect(() => {
+    if (location && location.state && location.state.openForm) {
+      setEditingRecord(null)
+      setFormOpen(true)
+      // clear history state so reloading doesn't reopen the dialog
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [location])
 
   async function handleEditRecord(rec) {
     setEditingRecord(rec)

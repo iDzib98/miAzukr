@@ -136,7 +136,7 @@ export default function BPChart({ defaultRange }) {
         <Card elevation={3} sx={{ mb: 2 }}>
             <CardHeader
                 title="Presión arterial"
-                subheader={`Último ${range}`}
+                subheader={`mmHg`}
                 action={(
                     <ToggleButtonGroup size="small" value={range} exclusive onChange={handleRangeChange} aria-label="Rango">
                         <ToggleButton value="day">Día</ToggleButton>

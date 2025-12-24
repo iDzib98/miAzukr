@@ -29,12 +29,14 @@ export default function MedicationBarChart({ defaultRange }) {
     }, [defaultRange])
     const [loading, setLoading] = useState(false)
     const [seriesData, setSeriesData] = useState(null)
+    const [hasRecs, setHasRecs] = useState(false)
 
     useEffect(() => {
         let mounted = true
         ;(async () => {
             if (!user?.email) return
             setLoading(true)
+            setHasRecs(false)
             try {
                 // try to get user meds list to order series (fallback: collect types from records)
                 const profile = await getUserProfile(user.email)
@@ -57,6 +59,9 @@ export default function MedicationBarChart({ defaultRange }) {
                 }
 
                 const recs = await getUserRecords(user.email, startDay, new Date(endDay.getTime() + 24 * 60 * 60 * 1000 - 1))
+
+                // Only consider records of type 'Medicación' as valid for this chart
+                setHasRecs(Array.isArray(recs) && recs.some(r => r.type === 'Medicación'))
 
                 // Collect medication types seen in records and merge with profile meds (profile order first)
                 const typesSeen = new Set(medsList)
@@ -108,8 +113,8 @@ export default function MedicationBarChart({ defaultRange }) {
     return (
         <Card elevation={3} sx={{ mb: 2 }}>
             <CardHeader
-                title="Medicación (dosis / conteo por día)"
-                subheader={`Último ${range}`}
+                title="Medicación"
+                subheader={`Dosis por día`}
                 action={(
                     <ToggleButtonGroup size="small" value={range} exclusive onChange={handleRangeChange} aria-label="Rango">
                         <ToggleButton value="day">Día</ToggleButton>
@@ -122,7 +127,7 @@ export default function MedicationBarChart({ defaultRange }) {
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress /></Box>
                 ) : (
-                    !seriesData || seriesData.xAxis.length === 0 ? (
+                    !hasRecs ? (
                         <Box sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
                             <Typography>No se encontraron registros de medicación en este intervalo.</Typography>
                         </Box>

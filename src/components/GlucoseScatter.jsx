@@ -242,7 +242,7 @@ export default function GlucoseScatter({ defaultRange }) {
         <Card elevation={3} sx={{ mb: 2 }}>
             <CardHeader
                 title="Mediciones de glucosa"
-                subheader={`Último ${range}`}
+                subheader={`${(profile && profile.unidadGlucosa) || defaultProfile.unidadGlucosa}`}
                 action={(
                     <ToggleButtonGroup size="small" value={range} exclusive onChange={handleRangeChange} aria-label="Rango">
                         <ToggleButton value="day">Día</ToggleButton>
@@ -260,128 +260,130 @@ export default function GlucoseScatter({ defaultRange }) {
                             <Typography>No se encontraron mediciones en este intervalo.</Typography>
                         </Box>
                     ) : (
-                        <Box sx={{ width: '100%', height: 320 }}>
-                            <ScatterChart
-                                height={320}
-                                // series: order matches colors array below
-                                series={[
-                                    {
-                                        id: 'ideal',
-                                        label: 'Ideal',
-                                        data: points.green.map((p, i) => ({ id: p.original?.id || `ideal-${i}`, x: p.x, y: p.y })),
-                                        valueFormatter: ({ x, y }) => {
-                                            const unit = (profile && profile.unidadGlucosa) || defaultProfile.unidadGlucosa
-                                            return `${y} ${unit}`
+                        <>
+                            <Box sx={{ width: '100%', height: 320 }}>
+                                <ScatterChart
+                                    height={320}
+                                    // series: order matches colors array below
+                                    series={[
+                                        {
+                                            id: 'ideal',
+                                            label: 'Ideal',
+                                            data: points.green.map((p, i) => ({ id: p.original?.id || `ideal-${i}`, x: p.x, y: p.y })),
+                                            valueFormatter: ({ x, y }) => {
+                                                const unit = (profile && profile.unidadGlucosa) || defaultProfile.unidadGlucosa
+                                                return `${y} ${unit}`
+                                            }
+                                        },
+                                        {
+                                            id: 'warning',
+                                            label: 'Advertencia',
+                                            data: points.yellow.map((p, i) => ({ id: p.original?.id || `warn-${i}`, x: p.x, y: p.y })),
+                                            valueFormatter: ({ x, y }) => {
+                                                const unit = (profile && profile.unidadGlucosa) || defaultProfile.unidadGlucosa
+                                                return `${y} ${unit}`
+                                            }
+                                        },
+                                        {
+                                            id: 'critical',
+                                            label: 'Crítico',
+                                            data: points.red.map((p, i) => ({ id: p.original?.id || `crit-${i}`, x: p.x, y: p.y })),
+                                            valueFormatter: ({ x, y }) => {
+                                                const unit = (profile && profile.unidadGlucosa) || defaultProfile.unidadGlucosa
+                                                return `${y} ${unit}`
+                                            }
                                         }
-                                    },
-                                    {
-                                        id: 'warning',
-                                        label: 'Advertencia',
-                                        data: points.yellow.map((p, i) => ({ id: p.original?.id || `warn-${i}`, x: p.x, y: p.y })),
-                                        valueFormatter: ({ x, y }) => {
-                                            const unit = (profile && profile.unidadGlucosa) || defaultProfile.unidadGlucosa
-                                            return `${y} ${unit}`
-                                        }
-                                    },
-                                    {
-                                        id: 'critical',
-                                        label: 'Crítico',
-                                        data: points.red.map((p, i) => ({ id: p.original?.id || `crit-${i}`, x: p.x, y: p.y })),
-                                        valueFormatter: ({ x, y }) => {
-                                            const unit = (profile && profile.unidadGlucosa) || defaultProfile.unidadGlucosa
-                                            return `${y} ${unit}`
-                                        }
-                                    }
-                                ]}
-                                // set xAxis domain (time) and formatting
-                                xAxis={[{
-                                    min: xDomain[0] || undefined,
-                                    max: xDomain[1] || undefined,
-                                    scaleType: 'time',
-                                    valueFormatter: (v) => range === 'day' ? new Date(v).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : new Date(v).toLocaleDateString('es-MX'),
-                                }]}
-                                yAxis={[{ label: (profile && profile.unidadGlucosa) || defaultProfile.unidadGlucosa }]}
-                                grid={{ vertical: true, horizontal: true }}
-                                colors={[severityColors.green, severityColors.yellow, severityColors.red]}
-                                tooltip={{ trigger: 'item' }}
-                                sx={{ width: '100%' }}
-                            />
-                        </Box>
+                                    ]}
+                                    // set xAxis domain (time) and formatting
+                                    xAxis={[{
+                                        min: xDomain[0] || undefined,
+                                        max: xDomain[1] || undefined,
+                                        scaleType: 'time',
+                                        valueFormatter: (v) => range === 'day' ? new Date(v).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : new Date(v).toLocaleDateString('es-MX'),
+                                    }]}
+                                    yAxis={[{ label: (profile && profile.unidadGlucosa) || defaultProfile.unidadGlucosa }]}
+                                    grid={{ vertical: true, horizontal: true }}
+                                    colors={[severityColors.green, severityColors.yellow, severityColors.red]}
+                                    tooltip={{ trigger: 'item' }}
+                                    sx={{ width: '100%' }}
+                                />
+                            </Box>
+                            {/* Stats as circular badges */}
+                            <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
+                                {/* compute unit */}
+                                {(() => {
+                                    const unit = (profile && profile.unidadGlucosa) || defaultProfile.unidadGlucosa
+                                    const circleSize = 88
+                                    const valOrDash = (v, isFloat) => v === null ? '—' : (isFloat ? Number(v).toFixed(1) : Math.round(v))
+
+                                    // compute severities based on profile thresholds and points
+                                    const p = profile || defaultProfile
+                                    const meanSeverity = getMeanSeverity(stats.mean, p)
+                                    const stdSeverity = getStdSeverity(stats.std, stats.mean, p)
+
+                                    // Determine whether highs/lows contained critical entries
+                                    const idealMin = Number(p.intervaloIdealMin)
+                                    const idealMax = Number(p.intervaloIdealMax)
+                                    const highCritical = points.red.some(pt => !isNaN(idealMax) && pt.y > idealMax)
+                                    const lowCritical = points.red.some(pt => !isNaN(idealMin) && pt.y < idealMin)
+                                    const highHasWarning = (stats.countHigh > 0) && !highCritical
+                                    const lowHasWarning = (stats.countLow > 0) && !lowCritical
+
+                                    const highSeverity = highCritical ? 'red' : (stats.countHigh === 0 ? 'green' : 'yellow')
+                                    const lowSeverity = lowCritical ? 'red' : (stats.countLow === 0 ? 'green' : 'yellow')
+
+                                    return (
+                                        <>
+                                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                                {/* Mean */}
+                                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                    <Box sx={{ width: circleSize, height: circleSize, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', bgcolor: severityColors[meanSeverity], color: textColorFor(meanSeverity), boxShadow: 1 }}>
+                                                        <Typography variant="h6">{stats.mean === null ? '—' : ((profile && profile.unidadGlucosa) === 'mmol/L' ? Number(stats.mean).toFixed(1) : Math.round(stats.mean))}</Typography>
+                                                        <Typography variant="caption" sx={{ mt: 0.5 }}>{unit}</Typography>
+                                                    </Box>
+                                                    <Typography variant="caption">Media</Typography>
+                                                </Box>
+
+                                                {/* Std */}
+                                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                    <Box sx={{ width: circleSize, height: circleSize, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', bgcolor: severityColors[stdSeverity], color: textColorFor(stdSeverity), boxShadow: 1 }}>
+                                                        <Typography variant="h6">{stats.std === null ? '—' : "±" + ((profile && profile.unidadGlucosa) === 'mmol/L' ? Number(stats.std).toFixed(1) : Math.round(stats.std))}</Typography>
+                                                        <Typography variant="caption" sx={{ mt: 0.5 }}>{unit}</Typography>
+                                                    </Box>
+                                                    <Typography variant="caption">Desviación</Typography>
+                                                </Box>
+
+                                                {/* High/Low combined (divided circle) */}
+                                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                    <Box sx={{ width: circleSize, height: circleSize, borderRadius: '50%', position: 'relative', boxShadow: 1, overflow: 'hidden' }}>
+                                                        {/* top half = high, bottom half = low */}
+                                                        <Box sx={{ position: 'absolute', inset: 0 }}>
+                                                            <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: '49%', backgroundColor: severityColors[highSeverity] }} />
+                                                            <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '49%', backgroundColor: severityColors[lowSeverity] }} />
+                                                        </Box>
+                                                        {/* labels */}
+                                                        <Typography variant="h6" sx={{ position: 'absolute', top: 8, left: 0, right: 0, textAlign: 'center', color: textColorFor(highSeverity) }}>{stats.countHigh ?? 0}</Typography>
+                                                        <Typography variant="h6" sx={{ position: 'absolute', bottom: 8, left: 0, right: 0, textAlign: 'center', color: textColorFor(lowSeverity) }}>{stats.countLow ?? 0}</Typography>
+                                                    </Box>
+                                                    <Typography variant="caption">Altos / Bajos</Typography>
+                                                </Box>
+
+                                                {/* Bolo */}
+                                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                    <Box sx={{ width: circleSize, height: circleSize, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', bgcolor: 'background.paper', boxShadow: 1 }}>
+                                                        <Typography variant="h6">{stats.boloCount ?? 0}</Typography>
+                                                        <Typography variant="caption" sx={{ mt: 0.5 }}>U</Typography>
+                                                    </Box>
+                                                    <Typography variant="caption">Bolo</Typography>
+                                                </Box>
+                                            </Box>
+                                        </>
+                                    )
+                                })()}
+                            </Box>
+                        </>
                     )
                 )}
-                {/* Stats as circular badges */}
-                <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
-                    {/* compute unit */}
-                    {(() => {
-                        const unit = (profile && profile.unidadGlucosa) || defaultProfile.unidadGlucosa
-                        const circleSize = 88
-                        const valOrDash = (v, isFloat) => v === null ? '—' : (isFloat ? Number(v).toFixed(1) : Math.round(v))
-
-                        // compute severities based on profile thresholds and points
-                        const p = profile || defaultProfile
-                        const meanSeverity = getMeanSeverity(stats.mean, p)
-                        const stdSeverity = getStdSeverity(stats.std, stats.mean, p)
-
-                        // Determine whether highs/lows contained critical entries
-                        const idealMin = Number(p.intervaloIdealMin)
-                        const idealMax = Number(p.intervaloIdealMax)
-                        const highCritical = points.red.some(pt => !isNaN(idealMax) && pt.y > idealMax)
-                        const lowCritical = points.red.some(pt => !isNaN(idealMin) && pt.y < idealMin)
-                        const highHasWarning = (stats.countHigh > 0) && !highCritical
-                        const lowHasWarning = (stats.countLow > 0) && !lowCritical
-
-                        const highSeverity = highCritical ? 'red' : (stats.countHigh === 0 ? 'green' : 'yellow')
-                        const lowSeverity = lowCritical ? 'red' : (stats.countLow === 0 ? 'green' : 'yellow')
-
-                        return (
-                            <>
-                                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                    {/* Mean */}
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <Box sx={{ width: circleSize, height: circleSize, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', bgcolor: severityColors[meanSeverity], color: textColorFor(meanSeverity), boxShadow: 1 }}>
-                                            <Typography variant="h6">{stats.mean === null ? '—' : ((profile && profile.unidadGlucosa) === 'mmol/L' ? Number(stats.mean).toFixed(1) : Math.round(stats.mean))}</Typography>
-                                            <Typography variant="caption" sx={{ mt: 0.5 }}>{unit}</Typography>
-                                        </Box>
-                                        <Typography variant="caption">Media</Typography>
-                                    </Box>
-
-                                    {/* Std */}
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <Box sx={{ width: circleSize, height: circleSize, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', bgcolor: severityColors[stdSeverity], color: textColorFor(stdSeverity), boxShadow: 1 }}>
-                                            <Typography variant="h6">{stats.std === null ? '—' : "±" + ((profile && profile.unidadGlucosa) === 'mmol/L' ? Number(stats.std).toFixed(1) : Math.round(stats.std))}</Typography>
-                                            <Typography variant="caption" sx={{ mt: 0.5 }}>{unit}</Typography>
-                                        </Box>
-                                        <Typography variant="caption">Desviación</Typography>
-                                    </Box>
-
-                                    {/* High/Low combined (divided circle) */}
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <Box sx={{ width: circleSize, height: circleSize, borderRadius: '50%', position: 'relative', boxShadow: 1, overflow: 'hidden' }}>
-                                            {/* top half = high, bottom half = low */}
-                                            <Box sx={{ position: 'absolute', inset: 0 }}>
-                                                <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: '49%', backgroundColor: severityColors[highSeverity] }} />
-                                                <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '49%', backgroundColor: severityColors[lowSeverity] }} />
-                                            </Box>
-                                            {/* labels */}
-                                            <Typography variant="h6" sx={{ position: 'absolute', top: 8, left: 0, right: 0, textAlign: 'center', color: textColorFor(highSeverity) }}>{stats.countHigh ?? 0}</Typography>
-                                            <Typography variant="h6" sx={{ position: 'absolute', bottom: 8, left: 0, right: 0, textAlign: 'center', color: textColorFor(lowSeverity) }}>{stats.countLow ?? 0}</Typography>
-                                        </Box>
-                                        <Typography variant="caption">Altos / Bajos</Typography>
-                                    </Box>
-
-                                    {/* Bolo */}
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <Box sx={{ width: circleSize, height: circleSize, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', bgcolor: 'background.paper', boxShadow: 1 }}>
-                                            <Typography variant="h6">{stats.boloCount ?? 0}</Typography>
-                                            <Typography variant="caption" sx={{ mt: 0.5 }}>U</Typography>
-                                        </Box>
-                                        <Typography variant="caption">Bolo</Typography>
-                                    </Box>
-                                </Box>
-                            </>
-                        )
-                    })()}
-                </Box>
             </CardContent>
         </Card>
     )
