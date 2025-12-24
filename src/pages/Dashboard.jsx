@@ -3,6 +3,7 @@ import { Box, Typography, Paper } from '@mui/material'
 import GlucoseScatter from '../components/GlucoseScatter'
 import BPChart from '../components/BPChart'
 import ErrorBoundary from '../components/ErrorBoundary'
+import FoodBarChart from '../components/FoodBarChart'
 
 export default function Dashboard() {
   return (
@@ -15,6 +16,8 @@ export default function Dashboard() {
           <GlucoseScatter />
 
           <BPChart />
+
+          <FoodBarChart />
 
         </Box>
       </Paper>
