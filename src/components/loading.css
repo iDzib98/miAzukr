@@ -24,13 +24,13 @@
 .heartbeat {
   stroke-dasharray: 240;
   stroke-dashoffset: 240;
-  animation: dash 1.6s ease-in-out infinite;
+  /* Draw (L -> 0) then erase from start (0 -> -L) */
+  animation: dash 3s linear infinite;
 }
 @keyframes dash {
   0% { stroke-dashoffset: 240; }
-  40% { stroke-dashoffset: 60; }
-  60% { stroke-dashoffset: 120; }
-  100% { stroke-dashoffset: 240; }
+  75% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -240; }
 }
 
 /* subtle check mark appear */
