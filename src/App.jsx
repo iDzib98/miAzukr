@@ -7,6 +7,7 @@ import Registros from './pages/Registros'
 import Informes from './pages/Informes'
 import Configuracion from './pages/Configuracion'
 import { onAuthChanged } from './firebaseClient'
+import LoadingLogo from './components/LoadingLogo'
 
 export const AuthContext = createContext({ user: null })
 
@@ -28,7 +29,12 @@ export default function App() {
     return () => unsubscribe()
   }, [])
 
-  if (user === undefined) return <div>Loading...</div>
+  if (user === undefined)
+    return (
+      <div style={{minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+        <LoadingLogo size={192} />
+      </div>
+    )
 
   return (
     <AuthContext.Provider value={{ user, setUser }}>
