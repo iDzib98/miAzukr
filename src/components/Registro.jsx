@@ -5,6 +5,7 @@ import OpacityIcon from '@mui/icons-material/Opacity'
 import RestaurantIcon from '@mui/icons-material/Restaurant'
 import DirectionsRunIcon from '@mui/icons-material/DirectionsRun'
 import MedicationIcon from '@mui/icons-material/Medication'
+import MonitorHeartIcon from '@mui/icons-material/MonitorHeart'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
 function formatTs(ts) {
@@ -80,6 +81,22 @@ export default function Registro({ record, compact = false, onEdit, onDelete, us
       )
     }
 
+      if (type === 'Presión arterial') {
+        const symptoms = data?.symptoms ? data.symptoms.split(',').map(s => s.trim()).filter(Boolean) : []
+        return (
+          <Stack spacing={1}>
+            <Typography variant="subtitle1">{data?.moment || 'Presión arterial'}</Typography>
+            <Typography variant="body2">Sistólica: {data?.systolic ?? '—'} mmHg</Typography>
+            <Typography variant="body2">Diastólica: {data?.diastolic ?? '—'} mmHg</Typography>
+            {symptoms.length > 0 && (
+              <Box>
+                {symptoms.map(s => <Chip key={s} label={s} size={compact ? 'small' : 'medium'} sx={{ mr: 0.5 }} />)}
+              </Box>
+            )}
+          </Stack>
+        )
+      }
+
     // default fallback: show JSON
     return (
       <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{JSON.stringify(data || {}, null, 2)}</pre>
@@ -90,6 +107,7 @@ export default function Registro({ record, compact = false, onEdit, onDelete, us
     if (type === 'Glucosa') return <OpacityIcon />
     if (type === 'Alimentación') return <RestaurantIcon />
     if (type === 'Actividad') return <DirectionsRunIcon />
+    if (type === 'Presión arterial') return <MonitorHeartIcon />
     return <MedicationIcon />
   }
 
@@ -100,6 +118,7 @@ export default function Registro({ record, compact = false, onEdit, onDelete, us
     if (type === 'Alimentación') return data?.carbs ?? '—'
     if (type === 'Actividad') return data?.durationMin ?? '—'
     if (type === 'Medicación' || type === 'MedicaciÃ³n') return data?.dose ?? '—'
+    if (type === 'Presión arterial') return (data && (data.systolic !== undefined || data.diastolic !== undefined)) ? `${data.systolic ?? '—'}/${data.diastolic ?? '—'}` : '—'
     return '—'
   }
 
@@ -108,6 +127,7 @@ export default function Registro({ record, compact = false, onEdit, onDelete, us
     if (type === 'Alimentación') return 'g de carb'
     if (type === 'Actividad') return 'min'
     if (type === 'Medicación' || type === 'MedicaciÃ³n') return 'dosis'
+    if (type === 'Presión arterial') return 'mmHg'
     return ''
   }
 
@@ -116,6 +136,7 @@ export default function Registro({ record, compact = false, onEdit, onDelete, us
     if (type === 'Alimentación') return data?.mealType || 'Alimentación'
     if (type === 'Actividad') return data?.activityType || 'Actividad'
     if (type === 'Medicación' || type === 'MedicaciÃ³n') return data?.medType || 'Medicación'
+    if (type === 'Presión arterial') return data?.moment || 'Presión arterial'
     return type || ''
   }
 
@@ -178,6 +199,39 @@ export default function Registro({ record, compact = false, onEdit, onDelete, us
           }
         }
       }
+    }
+  }
+
+  // Color coding for blood pressure
+  if (type === 'Presión arterial') {
+    const p = userProfile || {}
+    const sysRaw = data && (data.systolic !== undefined ? data.systolic : null)
+    const diaRaw = data && (data.diastolic !== undefined ? data.diastolic : null)
+    const sys = (sysRaw === null || sysRaw === '') ? null : Number(sysRaw)
+    const dia = (diaRaw === null || diaRaw === '') ? null : Number(diaRaw)
+
+    const sysHigh = Number(p.paSistolicaAlto)
+    const sysLow = Number(p.paSistolicaBajo)
+    const sysMin = Number(p.paSistolicaIdealMin)
+    const sysMax = Number(p.paSistolicaIdealMax)
+
+    const diaHigh = Number(p.paDiastolicaAlto)
+    const diaLow = Number(p.paDiastolicaBajo)
+    const diaMin = Number(p.paDiastolicaIdealMin)
+    const diaMax = Number(p.paDiastolicaIdealMax)
+
+    if ((sys !== null && !isNaN(sys)) || (dia !== null && !isNaN(dia))) {
+      // If either value is in a danger zone (high or low) -> red
+      const isDanger = (sys !== null && !isNaN(sys) && ((!isNaN(sysHigh) && sys >= sysHigh) || (!isNaN(sysLow) && sys <= sysLow))) ||
+                       (dia !== null && !isNaN(dia) && ((!isNaN(diaHigh) && dia >= diaHigh) || (!isNaN(diaLow) && dia <= diaLow)))
+
+      // If both present and both within ideal ranges -> green
+      const isIdeal = (sys !== null && !isNaN(sys) ? (!isNaN(sysMin) && !isNaN(sysMax) && sys >= sysMin && sys <= sysMax) : true) &&
+                      (dia !== null && !isNaN(dia) ? (!isNaN(diaMin) && !isNaN(diaMax) && dia >= diaMin && dia <= diaMax) : true)
+
+      if (isDanger) colorKey = 'error.main'
+      else if (isIdeal) colorKey = 'success.main'
+      else colorKey = 'warning.main'
     }
   }
 

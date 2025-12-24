@@ -19,3 +19,15 @@ const defaultProfile = {
 }
 
 export default defaultProfile
+
+// Rangos por defecto para presión arterial (mmHg)
+// Se usan en el componente Registro para colorear: success (verde), warning (amarillo), error (rojo)
+defaultProfile.paSistolicaIdealMin = 90
+defaultProfile.paSistolicaIdealMax = 120
+defaultProfile.paSistolicaAlto = 140
+defaultProfile.paSistolicaBajo = 80
+
+defaultProfile.paDiastolicaIdealMin = 60
+defaultProfile.paDiastolicaIdealMax = 80
+defaultProfile.paDiastolicaAlto = 90
+defaultProfile.paDiastolicaBajo = 50
