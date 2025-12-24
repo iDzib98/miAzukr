@@ -7,7 +7,7 @@ import {
   signOut as fbSignOut,
   onAuthStateChanged
 } from 'firebase/auth'
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, orderBy, getDocs, Timestamp } from 'firebase/firestore'
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, orderBy, getDocs, Timestamp, limit } from 'firebase/firestore'
 import offlineQueue from './offlineQueue'
 
 let app = null
@@ -110,6 +110,20 @@ export async function getUserRecords(email, fromDate, toDate) {
   const items = []
   snaps.forEach(s => items.push({ id: s.id, ...(s.data() || {}) }))
   return items
+}
+
+// Return a single user record ordered by timestamp. Use order = 'asc' to get oldest, 'desc' for newest.
+export async function getUserRecordExtreme(email, order = 'asc') {
+  const { app } = await initFirebase()
+  if (!app) return null
+  const db = getFirestore(app)
+  const id = emailToId(email)
+  const col = collection(db, 'usuarios', id, 'registros')
+  const q = query(col, orderBy('ts', order), limit(1))
+  const snaps = await getDocs(q)
+  let item = null
+  snaps.forEach(s => { item = { id: s.id, ...(s.data() || {}) } })
+  return item
 }
 
 export async function saveUserProfile(email, profile) {
