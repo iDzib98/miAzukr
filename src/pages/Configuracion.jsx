@@ -318,11 +318,40 @@ function AccountTab() {
           <Typography variant="subtitle1">Indicadores de glucosa ({local.unidadGlucosa || 'mg/dL'})</Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <TextField label="Intervalo ideal - máximo" type="number" color="success" focused inputProps={{ step: local.unidadGlucosa === 'mg/dL' ? 10 : 0.1 }} value={local.intervaloIdealMax || ''} onChange={e => setGlucoseField('intervaloIdealMax', e.target.value)} sx={{ flex: 1 }} />
-          <TextField label="Intervalo ideal - mínimo" type="number" color="success" focused inputProps={{ step: local.unidadGlucosa === 'mg/dL' ? 10 : 0.1 }} value={local.intervaloIdealMin || ''} onChange={e => setGlucoseField('intervaloIdealMin', e.target.value)} sx={{ flex: 1 }} />
+          <TextField
+            label="Intervalo ideal - máximo"
+            type="number"
+            color="success"
+            focused
+            inputProps={{ step: local.unidadGlucosa === 'mg/dL' ? 10 : 0.1 }}
+            value={local.intervaloIdealMax || ''}
+            onChange={e => setField('intervaloIdealMax', e.target.value)}
+            onBlur={e => setGlucoseField('intervaloIdealMax', e.target.value)}
+            sx={{ flex: 1 }}
+          />
+          <TextField
+            label="Intervalo ideal - mínimo"
+            type="number"
+            color="success"
+            focused
+            inputProps={{ step: local.unidadGlucosa === 'mg/dL' ? 10 : 0.1 }}
+            value={local.intervaloIdealMin || ''}
+            onChange={e => setField('intervaloIdealMin', e.target.value)}
+            onBlur={e => setGlucoseField('intervaloIdealMin', e.target.value)}
+            sx={{ flex: 1 }}
+          />
         </Box>
         <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-          <TextField label="Muy alto" type="number" error inputProps={{ step: local.unidadGlucosa === 'mg/dL' ? 10 : 0.1 }} value={local.muyAlto || ''} onChange={e => setGlucoseField('muyAlto', e.target.value)} sx={{ flex: 1 }} />
+          <TextField
+            label="Muy alto"
+            type="number"
+            error
+            inputProps={{ step: local.unidadGlucosa === 'mg/dL' ? 10 : 0.1 }}
+            value={local.muyAlto || ''}
+            onChange={e => setField('muyAlto', e.target.value)}
+            onBlur={e => setGlucoseField('muyAlto', e.target.value)}
+            sx={{ flex: 1 }}
+          />
           <TextField label="Muy bajo" type="number" error value={local.unidadGlucosa === 'mg/dL' ? 54 : 3} sx={{ flex: 1 }} disabled />
         </Box>
 
